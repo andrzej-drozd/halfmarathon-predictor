@@ -14,6 +14,7 @@ babel==2.17.0
 backoff==2.2.1
 beautifulsoup4==4.14.3
 bleach==6.3.0
+boto3==1.42.9
 certifi==2025.11.12
 cffi==2.0.0
 charset-normalizer==3.4.4

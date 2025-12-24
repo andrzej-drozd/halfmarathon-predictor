@@ -1,7 +1,5 @@
-aiobotocore==2.26.0
 aiohappyeyeballs==2.6.1
 aiohttp==3.13.2
-aioitertools==0.13.0
 aiosignal==1.4.0
 annotated-types==0.7.0
 anyio==4.12.0
@@ -35,7 +33,6 @@ fastjsonschema==2.21.2
 fonttools==4.61.1
 fqdn==1.5.1
 frozenlist==1.8.0
-fsspec==2025.12.0
 googleapis-common-protos==1.72.0
 h11==0.16.0
 httpcore==1.0.9
@@ -121,7 +118,6 @@ rfc3339-validator==0.1.4
 rfc3986-validator==0.1.1
 rfc3987-syntax==1.1.0
 rpds-py==0.30.0
-s3fs==2025.12.0
 s3transfer==0.16.0
 scikit-learn==1.8.0
 scipy==1.16.3

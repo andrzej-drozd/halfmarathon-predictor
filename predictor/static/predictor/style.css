@@ -1,0 +1,396 @@
+:root{
+  --bg:#0b0d12;
+  --card:#111522;
+  --text:#e9eefc;
+  --muted:#aab4d6;
+  --border:rgba(255,255,255,.10);
+  --accent:#5b8cff;
+  --danger:#ff5b6e;
+  --shadow: 0 18px 50px rgba(0,0,0,.55);
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  background: radial-gradient(1200px 700px at 20% 0%, rgba(91,140,255,.22), transparent 55%),
+              radial-gradient(900px 600px at 80% 10%, rgba(255,91,110,.12), transparent 60%),
+              var(--bg);
+  color:var(--text);
+}
+
+.wrap{
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 56px 18px;
+}
+
+
+.header{
+  margin-bottom: 18px;
+}
+.header h1{
+  margin: 0 0 6px 0;
+  font-size: 28px;
+  letter-spacing: .2px;
+}
+.header p{
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.card{
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+}
+
+.form{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.label{
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.row{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+input{
+  width: 100%;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,.25);
+  color: var(--text);
+  outline: none;
+  font-size: 15px;
+}
+
+input:focus{
+  border-color: rgba(91,140,255,.55);
+  box-shadow: 0 0 0 4px rgba(91,140,255,.14);
+}
+
+.actions{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+  margin-top: 6px;
+}
+
+button{
+  appearance: none;
+  border: 1px solid rgba(91,140,255,.50);
+  background: linear-gradient(180deg, rgba(91,140,255,.95), rgba(91,140,255,.75));
+  color: #071022;
+  font-weight: 700;
+  padding: 11px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button:hover{
+  filter: brightness(1.05);
+}
+
+.hint{
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.box{
+  margin-top: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  padding: 12px;
+  background: rgba(0,0,0,.20);
+}
+
+.box h2{
+  margin: 0 0 8px 0;
+  font-size: 15px;
+  color: var(--text);
+}
+
+pre{
+  margin:0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.error{
+  border-color: rgba(255,91,110,.50);
+}
+.error h2{ color: var(--danger); }
+
+.grid-2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.card-title{
+  margin: 0 0 10px 0;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.badge{
+  display:inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,.18);
+}
+
+.big{
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: .5px;
+}
+
+/* responsive: on narrow screens stack */
+@media (max-width: 720px){
+  .grid-2{
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Make cards equal height and align buttons */
+.card-stretch{
+  display:flex;
+  flex-direction:column;
+}
+
+/* Right card form should fill card height */
+.form-grow{
+  display:flex;
+  flex-direction:column;
+  flex: 1;              /* fills the card */
+  margin-top: 10px;
+}
+
+/* Row with textarea should expand */
+.row-grow{
+  display:flex;
+  flex-direction:column;
+  gap: 8px;
+  flex: 1;              /* take all available vertical space */
+  min-height: 0;        /* IMPORTANT: allow textarea to shrink/grow inside flex */
+}
+
+textarea{
+  width: 100%;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,.25);
+  color: var(--text);
+  outline: none;
+  font-size: 15px;
+  resize: none;
+
+  /* 👇 KLUCZOWE LINIE */
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+textarea:focus{
+  border-color: rgba(91,140,255,.55);
+  box-shadow: 0 0 0 4px rgba(91,140,255,.14);
+}
+
+/* Textarea should fill the remaining space */
+.textarea-grow{
+  flex: 1;              /* fill row-grow */
+  min-height: 0;        /* IMPORTANT */
+  width: 100%;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,.25);
+  color: var(--text);
+  outline: none;
+  font-size: 15px;
+  resize: none;
+}
+
+.textarea-grow:focus{
+  border-color: rgba(91,140,255,.55);
+  box-shadow: 0 0 0 4px rgba(91,140,255,.14);
+}
+
+/* Pin actions to bottom */
+.actions-bottom{
+  margin-top: 14px;
+}
+/* Keep both cards same height */
+.card-stretch{
+  display:flex;
+  flex-direction:column;
+}
+
+/* Left/Right forms should take consistent vertical space */
+.form-grow-left,
+.form-grow-right{
+  display:flex;
+  flex-direction:column;
+}
+
+/* Right form: textarea expands, button pinned */
+.form-grow-right{
+  flex: 1;
+  margin-top: 10px;
+}
+
+.row-grow{
+  display:flex;
+  flex-direction:column;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.textarea-grow{
+  flex: 1;
+  min-height: 0;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+/* Pin actions at the bottom of the form block */
+.actions-bottom{
+  margin-top: 14px;
+}
+
+/* Result box is always present */
+.result-box{
+  margin-top: 14px;
+}
+
+/* Hide the numbers visually when empty, but keep layout */
+.is-empty{
+  opacity: 1;
+}
+
+/* FORCE: textarea behaves like a real textarea and stretches */
+.textarea-grow{
+  display: block;
+  width: 100%;
+  flex: 1;
+  min-height: 220px;   /* kluczowe: daje “masę” prawej kolumnie */
+  min-width: 0;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.error-inline{
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 95, 86, 0.35);
+  background: rgba(255, 95, 86, 0.08);
+  color: rgba(255, 220, 220, 0.95);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.modal-overlay{
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.55);
+  z-index: 9999;
+}
+
+.modal{
+  width: min(520px, calc(100vw - 32px));
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(15,15,15,.96);
+  padding: 18px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.55);
+}
+
+.modal-title{ margin: 0 0 6px 0; font-size: 16px; }
+.modal-subtitle{ margin: 0 0 12px 0; color: var(--muted); font-size: 13px; }
+
+.modal input{
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,.25);
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+}
+
+.modal-actions{
+  display:flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.btn-secondary{
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border);
+}
+
+#openai-key-banner{
+  display:none;
+  margin-top:10px;
+  color: rgba(230,235,255,.85);
+}
+
+.card-stretch{ display:flex; flex-direction:column; }
+.form-grow{ display:flex; flex-direction:column; flex:1; }
+.row-grow{ flex:1; display:flex; flex-direction:column; }
+.textarea-grow{ flex:1; }
+.actions-bottom{ margin-top:auto; }
+.result-box{ min-height: 120px; }
+
+.btn-spinner{
+  display:none;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,.35);
+  border-top-color: rgba(255,255,255,.9);
+  animation: spin .8s linear infinite;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+@keyframes spin{
+  to { transform: rotate(360deg); }
+}
+
+button[disabled]{
+  opacity: .75;
+  cursor: not-allowed;
+}

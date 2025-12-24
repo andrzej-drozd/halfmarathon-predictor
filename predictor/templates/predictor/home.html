@@ -1,0 +1,305 @@
+{% load static %}
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Halfmarathon Predictor</title>
+  <link rel="stylesheet" href="{% static 'predictor/style.css' %}">
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>Halfmarathon Predictor</h1>
+      <p>Podaj dane i czas na 5 km dla oszacowania czasu półmaratonu.</p>
+    </div>
+
+    <div class="grid-2">
+      <!-- =========================
+             CARD 1: FORMULARZ (AJAX)
+        ========================== -->
+      <div class="card card-stretch" id="left-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+          <h2 class="card-title">Wypełnij formularz i naciśnij przycisk poniżej …</h2>
+        </div>
+
+        <form class="form" id="classic-form" method="post" action="/predict_form">
+          {% csrf_token %}
+
+          <div class="row">
+            <div class="label">Płeć (M/K)</div>
+            <input id="classic-sex" name="sex" placeholder="M" value="{{ form_data.sex|default:'M' }}" />
+          </div>
+
+          <div class="row">
+            <div class="label">Wiek (10–90)</div>
+            <input id="classic-age" name="age" placeholder="40" value="{{ form_data.age|default:'40' }}" />
+          </div>
+
+          <div class="row">
+            <div class="label">Twój czas 5 km (MM:SS)</div>
+            <input id="classic-t5k" name="t5k" placeholder="25:00" value="{{ form_data.t5k|default:'25:00' }}" />
+          </div>
+
+          <div class="actions">
+            <button type="submit" id="btn-classic">
+              Oszacuj na podstawie danych formularza
+              <span class="btn-spinner" id="spin-classic"></span>
+            </button>
+
+          </div>
+        </form>
+
+        <!-- Result box LEFT (always visible) -->
+        <div class="box result-box" id="left-result" style="margin-top:12px;">
+          <h2>Wynik</h2>
+          <div class="big" id="left-big">00:00:00</div>
+          <div class="hint error-inline" id="left-error" style="margin-top:10px; display:none;"></div>
+        </div>
+      </div>
+
+      <!-- =========================
+             CARD 2: TEKST (LLM) - AJAX
+        ========================== -->
+      <div class="card card-stretch" id="right-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+          <h2 class="card-title">… albo podaj tekstem otwartym swoją płeć, wiek i czas na 5 km:</h2>
+        </div>
+
+        <!-- NOTE: this form will NOT submit normally; JS intercepts -->
+        <form class="form form-grow" id="text-form" method="post" action="/predict_text_form">
+          {% csrf_token %}
+
+          <div class="row row-grow">
+            <div class="label">Tekst (np. „Jestem mężczyzną, mam 40 lat, 5 km biegam w 25 minut”)</div>
+            <textarea class="textarea-grow" id="text-input" name="text" placeholder="Wpisz tutaj...">{{ text_data.text|default:"" }}</textarea>
+          </div>
+
+          <div class="actions actions-bottom">
+            <button type="submit" id="btn-text">
+              Oszacuj na podstawie danych tekstowych
+              <span class="btn-spinner" id="spin-text"></span>
+            </button>
+
+          </div>
+        </form>
+
+        <!-- Result box RIGHT (always visible) -->
+        <div class="box result-box" id="right-result" style="margin-top:12px;">
+          <h2>Wynik</h2>
+          <div class="big" id="right-big">00:00:00</div>
+          <div class="hint error-inline" id="right-error" style="margin-top:10px; display:none;"></div>
+          <div class="hint" id="right-missing" style="margin-top:10px; display:none;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================
+       MODAL: OpenAI key
+  ========================== -->
+  <div id="key-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <h3 class="modal-title">Podaj klucz OpenAI</h3>
+      <p class="modal-subtitle">Klucz będzie użyty tylko w tej sesji (do odświeżenia/ zamknięcia).</p>
+
+      <input id="openai-key-input" type="password" placeholder="sk-..." autocomplete="off" />
+
+      <div class="modal-actions">
+        <button id="key-cancel" type="button" class="btn-secondary">Anuluj</button>
+        <button id="key-save" type="button">Zapisz klucz</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // =========================================================
+  // GLOBAL: OpenAI key stored only in memory (gone on refresh/close)
+  // =========================================================
+  let OPENAI_KEY = null;
+
+  // =========================================================
+  // SPINNERS + loading helper (MUSI być na górze)
+  // =========================================================
+  const spinClassic = document.getElementById("spin-classic");
+  const spinText = document.getElementById("spin-text");
+
+  function setLoading(btn, spinnerEl, isLoading) {
+    btn.disabled = isLoading;
+    if (spinnerEl) spinnerEl.style.display = isLoading ? "inline-block" : "none";
+  }
+
+  // =========================================================
+  // LEFT (classic) AJAX
+  // =========================================================
+  const classicForm = document.getElementById("classic-form");
+  const classicSex = document.getElementById("classic-sex");
+  const classicAge = document.getElementById("classic-age");
+  const classicT5k = document.getElementById("classic-t5k");
+  const btnClassic = document.getElementById("btn-classic");
+
+  const leftBig = document.getElementById("left-big");
+  const leftError = document.getElementById("left-error");
+
+  function setLeftState({ hhmmss = "00:00:00", error = null }) {
+    leftBig.textContent = hhmmss;
+
+    if (error) {
+      leftError.textContent = error;
+      leftError.style.display = "block";
+    } else {
+      leftError.textContent = "";
+      leftError.style.display = "none";
+    }
+  }
+
+  classicForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const sex = (classicSex.value || "").trim();
+    const age = (classicAge.value || "").trim();
+    const t5k = (classicT5k.value || "").trim();
+
+    setLeftState({ hhmmss: "00:00:00", error: null });
+    setLoading(btnClassic, spinClassic, true);
+
+    try {
+      const resp = await fetch("/predict_form_ui", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sex, age, t5k })
+      });
+
+      const data = await resp.json();
+
+      if (!data || data.ok === false) {
+        setLeftState({ error: (data && data.error) ? data.error : "Błąd serwera." });
+        return;
+      }
+
+      if (data.prediction && data.prediction.t21k_hhmmss) {
+        setLeftState({ hhmmss: data.prediction.t21k_hhmmss });
+      } else {
+        setLeftState({ error: "Nieoczekiwana odpowiedź serwera." });
+      }
+    } catch (err) {
+      setLeftState({ error: "Błąd sieci / serwera." });
+    } finally {
+      setLoading(btnClassic, spinClassic, false);
+    }
+  });
+
+  // =========================================================
+  // RIGHT (text/LLM) AJAX + modal
+  // =========================================================
+  const textForm = document.getElementById("text-form");
+  const textInput = document.getElementById("text-input");
+  const btnText = document.getElementById("btn-text");
+
+  const rightBig = document.getElementById("right-big");
+  const rightError = document.getElementById("right-error");
+  const rightMissing = document.getElementById("right-missing");
+
+  const modal = document.getElementById("key-modal");
+  const keyInput = document.getElementById("openai-key-input");
+
+  textForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    await runTextPrediction();
+  });
+
+  function showModal() {
+    modal.style.display = "flex";
+    setTimeout(() => keyInput.focus(), 50);
+  }
+
+  function hideModal() {
+    modal.style.display = "none";
+  }
+
+  document.getElementById("key-cancel").addEventListener("click", hideModal);
+
+  document.getElementById("key-save").addEventListener("click", () => {
+    const v = (keyInput.value || "").trim();
+    if (!v) return;
+
+    OPENAI_KEY = v;
+    keyInput.value = "";
+    hideModal();
+
+    runTextPrediction();
+  });
+
+  function setRightState({ hhmmss = "00:00:00", error = null, missing = null }) {
+    rightBig.textContent = hhmmss;
+
+    if (error) {
+      rightError.textContent = error;
+      rightError.style.display = "block";
+    } else {
+      rightError.textContent = "";
+      rightError.style.display = "none";
+    }
+
+    if (missing && missing.length) {
+      rightMissing.innerHTML = 'Brakuje danych: <b>' + missing.join(", ") + '</b>';
+      rightMissing.style.display = "block";
+    } else {
+      rightMissing.innerHTML = "";
+      rightMissing.style.display = "none";
+    }
+  }
+
+  async function runTextPrediction() {
+    const text = (textInput.value || "").trim();
+
+    if (!text) {
+      setRightState({ error: "Brakuje tekstu wejściowego." });
+      return;
+    }
+
+    if (!OPENAI_KEY) {
+      showModal();
+      return;
+    }
+
+    setRightState({ hhmmss: "00:00:00", error: null, missing: null });
+    setLoading(btnText, spinText, true);
+
+    try {
+      const resp = await fetch("/predict_text_ui", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, openai_api_key: OPENAI_KEY })
+      });
+
+      const data = await resp.json();
+
+      if (!data || data.ok === false) {
+        setRightState({ error: (data && data.error) ? data.error : "Błąd serwera." });
+        return;
+      }
+
+      if (data.missing && data.missing.length) {
+        setRightState({ missing: data.missing });
+        return;
+      }
+
+      if (data.prediction && data.prediction.t21k_hhmmss) {
+        setRightState({ hhmmss: data.prediction.t21k_hhmmss });
+        return;
+      }
+
+      setRightState({ error: "Nieoczekiwana odpowiedź serwera." });
+    } catch (e) {
+      setRightState({ error: "Błąd sieci / serwera." });
+    } finally {
+      setLoading(btnText, spinText, false);
+    }
+  }
+</script>
+
+
+  </body>
+</html>

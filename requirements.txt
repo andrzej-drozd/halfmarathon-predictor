@@ -14,8 +14,6 @@ babel==2.17.0
 backoff==2.2.1
 beautifulsoup4==4.14.3
 bleach==6.3.0
-boto3==1.42.14
-botocore==1.42.14
 certifi==2025.11.12
 cffi==2.0.0
 charset-normalizer==3.4.4
@@ -118,7 +116,6 @@ rfc3339-validator==0.1.4
 rfc3986-validator==0.1.1
 rfc3987-syntax==1.1.0
 rpds-py==0.30.0
-s3transfer==0.16.0
 scikit-learn==1.8.0
 scipy==1.16.3
 Send2Trash==1.8.3

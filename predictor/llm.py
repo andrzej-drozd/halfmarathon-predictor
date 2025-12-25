@@ -2,13 +2,7 @@ import json
 import os
 from typing import Any, Dict, Optional
 
-from openai import OpenAI
-
-# Langfuse (opcjonalnie) — jeśli paczka jest zainstalowana i env są ustawione, to zadziała
-try:
-    from langfuse import Langfuse
-except Exception:
-    Langfuse = None
+from langfuse.openai import OpenAI
 
 
 SYSTEM_PROMPT = """
@@ -117,33 +111,8 @@ def extract_runner_profile(text: str, api_key: Optional[str] = None) -> Dict[str
         # brak klucza => zwracamy brakujące, ale bez crasha
         return {"sex": None, "age": None, "t5k": None, "t5k_s": None, "missing": ["sex", "age", "t5k"]}
 
-    # Langfuse (opcjonalnie)
-    langfuse = None
-    if Langfuse is not None:
-        pub = os.getenv("LANGFUSE_PUBLIC_KEY")
-        sec = os.getenv("LANGFUSE_SECRET_KEY")
-        host = os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
-        if pub and sec:
-            try:
-                langfuse = Langfuse(public_key=pub, secret_key=sec, host=host)
-            except Exception:
-                langfuse = None
-
+    # IMPORTANT: this OpenAI client is instrumented by Langfuse automatically
     client = OpenAI(api_key=key)
-
-    trace = None
-    span = None
-    if langfuse:
-        try:
-            trace = langfuse.trace(name="extract_runner_profile")
-            span = trace.span(
-                name="openai.chat.completions.create",
-                input={"text": text},
-                metadata={"model": os.getenv("OPENAI_MODEL", "gpt-4o-mini")},
-            )
-        except Exception:
-            trace = None
-            span = None
 
     model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
@@ -156,38 +125,12 @@ def extract_runner_profile(text: str, api_key: Optional[str] = None) -> Dict[str
                 {"role": "user", "content": text},
             ],
         )
-        content = resp.choices[0].message.content or ""
-        content = content.strip()
 
-        # model ma zwrócić JSON; próbujemy zdekodować
+        content = (resp.choices[0].message.content or "").strip()
         parsed = json.loads(content)
 
-        out = _normalize_extracted(parsed)
+        return _normalize_extracted(parsed)
 
-        if span:
-            try:
-                span.end(output=out)
-            except Exception:
-                pass
-        if trace:
-            try:
-                trace.end()
-            except Exception:
-                pass
-
-        return out
-
-    except Exception as e:
+    except Exception:
         # fail-safe: nie wywalaj całej aplikacji
-        out = {"sex": None, "age": None, "t5k": None, "t5k_s": None, "missing": ["sex", "age", "t5k"]}
-        if span:
-            try:
-                span.end(output={"error": str(e)})
-            except Exception:
-                pass
-        if trace:
-            try:
-                trace.end()
-            except Exception:
-                pass
-        return out
+        return {"sex": None, "age": None, "t5k": None, "t5k_s": None, "missing": ["sex", "age", "t5k"]}
